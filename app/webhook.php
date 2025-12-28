@@ -2,7 +2,8 @@
 header('Content-Type: application/json');
 
 $VERIFY_TOKEN = 'insta_verify_123';
-$PAGE_TOKEN   = 'IGAAcijxZBgoZB5BZAFlSVXhUS3Y2c3pudDF0ZAk1lT190ZATMzVDYzQ1ROSk1qVVF0ZA2RpNDhVSXZAqYWdOMnJZAY1JaV0lNcEc3d3JXMDZAxTV9fVkFyYy1uMFJtSjh0OUR2OXAtdnFMV0lpUDVNT3Q3U2pST0NoWE12aUFoQ1ZAxR2JSSQZDZD';
+$IG_ID        = '17841462449766356';
+$IG_TOKEN     = 'IGAAcijxZBgoZB5BZAFlSVXhUS3Y2c3pudDF0ZAk1lT190ZATMzVDYzQ1ROSk1qVVF0ZA2RpNDhVSXZAqYWdOMnJZAY1JaV0lNcEc3d3JXMDZAxTV9fVkFyYy1uMFJtSjh0OUR2OXAtdnFMV0lpUDVNT3Q3U2pST0NoWE12aUFoQ1ZAxR2JSSQZDZD';
 
 /* ===============================
    WEBHOOK VERIFICATION (GET)
@@ -25,24 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 ================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $input = json_decode(file_get_contents('php://input'), true);
+    $payload = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($input['entry'][0]['messaging'][0])) {
+    if (!isset($payload['entry'][0]['messaging'][0])) {
         http_response_code(200);
         exit;
     }
 
-    $event = $input['entry'][0]['messaging'][0];
+    $event = $payload['entry'][0]['messaging'][0];
 
-    // Sender IG User ID
     $senderId = $event['sender']['id'] ?? null;
+    $text     = $event['message']['text'] ?? null;
 
-    // Incoming text
-    $messageText = $event['message']['text'] ?? '';
-
-    if ($senderId && $messageText) {
-
-        autoReply($senderId, $PAGE_TOKEN);
+    if ($senderId && $text) {
+        sendInstagramReply($senderId, $text);
     }
 
     http_response_code(200);
@@ -51,28 +48,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 /* ===============================
-   AUTO REPLY FUNCTION
+   SEND INSTAGRAM DM
 ================================ */
-function autoReply($recipientId, $token)
+function sendInstagramReply($recipientId, $incomingText)
 {
-    $url = 'https://graph.facebook.com/v19.0/me/messages';
+    global $IG_ID, $IG_TOKEN;
+
+    $url = "https://graph.instagram.com/v24.0/$IG_ID/messages";
 
     $payload = [
-        'recipient' => ['id' => $recipientId],
-        'message' => [
-            'text' => 'Thanks for messaging us! 👋 We will get back to you shortly.'
+        "recipient" => [
+            "id" => $recipientId
+        ],
+        "message" => [
+            "text" => "Thanks for your message! 👋 We will reply shortly."
         ]
     ];
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
-        CURLOPT_POST => true,
+        CURLOPT_POST           => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json'
+        CURLOPT_HTTPHEADER     => [
+            "Authorization: Bearer $IG_TOKEN",
+            "Content-Type: application/json"
         ],
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_URL => $url . '?access_token=' . $token
+        CURLOPT_POSTFIELDS     => json_encode($payload)
     ]);
 
     curl_exec($ch);
