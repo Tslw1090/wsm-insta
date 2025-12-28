@@ -1,32 +1,41 @@
 <?php
 header('Content-Type: application/json');
 
-$logFile = __DIR__ . '/runtime.log';
+$VERIFY_TOKEN = 'insta_verify_123'; // choose any string
 
-// Read input (any random data for now)
-$raw = file_get_contents('php://input');
+/* ----------------------------------
+   1️⃣ WEBHOOK VERIFICATION (GET)
+-----------------------------------*/
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-// Incoming log
-$time = date('H:i:s');
-file_put_contents(
-    $logFile,
-    "[$time] INCOMING: " . ($raw ?: 'No body') . PHP_EOL,
-    FILE_APPEND
-);
+    if (
+        isset($_GET['hub_mode']) &&
+        $_GET['hub_mode'] === 'subscribe' &&
+        isset($_GET['hub_verify_token']) &&
+        $_GET['hub_verify_token'] === $VERIFY_TOKEN
+    ) {
+        // IMPORTANT: must echo challenge only
+        echo $_GET['hub_challenge'];
+        exit;
+    }
 
-// Simulate outgoing response
-$response = [
-    'status' => 'ok',
-    'reply' => 'Auto response generated',
-    'time' => $time
-];
+    http_response_code(403);
+    echo json_encode(['error' => 'Invalid verify token']);
+    exit;
+}
 
-// Outgoing log
-file_put_contents(
-    $logFile,
-    "[$time] OUTGOING: " . json_encode($response) . PHP_EOL,
-    FILE_APPEND
-);
+/* ----------------------------------
+   2️⃣ WEBHOOK EVENTS (POST)
+-----------------------------------*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-echo json_encode($response);
+    $payload = file_get_contents('php://input');
 
+    // For now, just acknowledge receipt
+    http_response_code(200);
+    echo json_encode([
+        'status' => 'received',
+        'time' => date('H:i:s')
+    ]);
+    exit;
+}
