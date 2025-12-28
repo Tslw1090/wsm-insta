@@ -1,0 +1,8 @@
+domains:
+- wsm-insta.wasmer.app
+kind: wasmer.io/App.v0
+name: wsm_insta
+owner: tslw1090
+package: .
+scaling:
+  mode: single_concurrency
