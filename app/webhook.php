@@ -54,7 +54,7 @@ function sendInstagramReply($recipientId, $incomingText)
 {
     global $IG_ID, $IG_TOKEN;
 
-    $url = "https://graph.instagram.com/v24.0/$IG_ID/messages";
+    $url = "https://graph.instagram.com/v24.0/me/messages";
 
     $payload = [
         "recipient" => [
